@@ -62,8 +62,8 @@ struct NumericDiffCostFunctor {
 //        E = -ceres::log(He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
 //                        + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
 
-
-        E = 1 - (He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
+//together with robust function we implement the eassy
+        E = -1 + (He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
                         + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
 
 //        std::cout<<lb<<std::endl;
@@ -177,11 +177,11 @@ int main()
                         )
                 ) ;
 
-        problem.AddResidualBlock(cost_function, new ceres::HuberLoss(1), initial_pose);
+        problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(1), initial_pose);
     }
 
     ceres::Solver::Options options;
-    options.minimizer_progress_to_stdout = true;
+//    options.minimizer_progress_to_stdout = true;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
