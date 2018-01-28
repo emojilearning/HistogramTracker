@@ -12,6 +12,14 @@ void draw(Mat& out1, int x_before,int y_before,int l_x_b,int l_y_b)
     line(out1,{x_before,y_before+l_y_b},{x_before+l_x_b,y_before+l_y_b},{0,255,0});
 }
 
+void draw(Mat& out1, Point* p)
+{
+    line(out1,p[0],p[1],{0,255,0});
+    line(out1,p[1],p[2],{0,255,0});
+    line(out1,p[2],p[3],{0,255,0});
+    line(out1,p[3],p[0],{0,255,0});
+}
+
 struct Histogram
 {
     double fR[255]{};
@@ -50,11 +58,12 @@ struct NumericDiffCostFunctor {
 
 
         auto He = (1.0) / ((1) + ceres::exp(-Theta/100));
-        std::cout<<He <<std::endl;
-        std::cout<<fwd_.at<double>(cv::Point(xf,yf))<<","<< bg_.at<double>(cv::Point(xf,yf))<<std::endl;
+//
+//        E = -ceres::log(He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
+//                        + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
 
 
-        E = -ceres::log(He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
+        E = 1 - (He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
                         + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
 
 //        std::cout<<lb<<std::endl;
@@ -82,6 +91,7 @@ int main()
     int l_y_b = 111;
 
     double initial_pose[2] = {(double)x_before,(double)y_before};
+
 
     Mat out1 = img.clone();
     draw(out1,x_before,y_before,l_x_b,l_y_b);
@@ -139,6 +149,9 @@ int main()
     imshow("post",foreth);
 
     Mat dt_map,dt_mapr;
+    //initial as mask or foreth?(which is not so accurate a map but faster if valid
+//    distanceTransform(mask,dt_map,DIST_L2,3);
+//    distanceTransform(~mask,dt_mapr,DIST_L2,3);
     distanceTransform(foreth,dt_map,DIST_L2,3);
     distanceTransform(~foreth,dt_mapr,DIST_L2,3);
     //Φ(x) = −d(x),∀x ∈ Ωf and Φ(x) = d(x),∀x ∈ Ωb.
@@ -147,8 +160,14 @@ int main()
 
     ceres::Problem problem;
 
-    Point cornor[] = {{0,0},{l_x_b,0},{0,l_y_b},{l_x_b,l_y_b}};
-    for(int i=0;i<4;i++){
+    vector<Point> cornor = {{0,0},{l_x_b,0},{0,l_y_b},{l_x_b,l_y_b}};
+    for (int k = 0; k < 10; ++k) {
+        cornor.emplace_back(0,l_y_b*k/10.0);
+        cornor.emplace_back(l_x_b,l_y_b*k/10.0);
+        cornor.emplace_back(l_x_b*k/10.0,0);
+        cornor.emplace_back(l_x_b*k/10.0,l_y_b);
+    }
+    for(int i=0;i<cornor.size();i++){
         auto cost_function =
                 new ceres::NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL,1,2>(
                         new NumericDiffCostFunctor(cornor[i],\
@@ -157,12 +176,8 @@ int main()
                         dt_map\
                         )
                 ) ;
-//        cout<<dt_map.at<float>(y_before,x_before)<<endl;
-//        cout<<dt_map.at<float>(y_before,x_before + l_x_b)<<endl;
-//        cout<<dt_map.at<float>(y_before + l_y_b,x_before)<<endl;
-//        cout<<dt_map.at<float>(y_before + l_y_b,x_before + l_x_b)<<endl;
 
-        problem.AddResidualBlock(cost_function, NULL, initial_pose);
+        problem.AddResidualBlock(cost_function, new ceres::HuberLoss(1), initial_pose);
     }
 
     ceres::Solver::Options options;
