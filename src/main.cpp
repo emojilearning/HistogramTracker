@@ -46,11 +46,21 @@ struct NumericDiffCostFunctor {
 
         auto dt = mb + (mt - mb)*(y - yf);
         double Theta = (dt);
-//        auto He = (1.0) / ((1) + ceres::exp(Theta));
+
+
+
+        auto He = (1.0) / ((1) + ceres::exp(-Theta/100));
+        std::cout<<He <<std::endl;
+        std::cout<<fwd_.at<double>(cv::Point(xf,yf))<<","<< bg_.at<double>(cv::Point(xf,yf))<<std::endl;
+
+
+        E = -ceres::log(He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
+                        + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
+
 //        std::cout<<lb<<std::endl;
 
 //        E = He;
-        residual[0] = Theta;
+        residual[0] = E;
         return true;
     }
 
@@ -116,6 +126,12 @@ int main()
                             * cur_histogram.bR[p[2]]/gnum);
         fposterior.at<double>(j) = flikelihood * (fnum/(fnum + gnum))*fnum/(fnum + gnum)*fnum/(fnum + gnum);
         bposterior.at<double>(j) = blikelihood * (gnum/(fnum + gnum))*gnum/(fnum + gnum)*gnum/(fnum + gnum);
+        if(fposterior.at<double>(j)&&bposterior.at<double>(j))
+        {
+            auto s = fposterior.at<double>(j)+bposterior.at<double>(j);
+            fposterior.at<double>(j) = fposterior.at<double>(j)/s;
+            bposterior.at<double>(j) = bposterior.at<double>(j)/s;
+        }
 //        std::cout<<fposterior.at<double>(j)<<" "<<bposterior.at<double>(j)<<std::endl;
     }
 
@@ -125,7 +141,8 @@ int main()
     Mat dt_map,dt_mapr;
     distanceTransform(foreth,dt_map,DIST_L2,3);
     distanceTransform(~foreth,dt_mapr,DIST_L2,3);
-    dt_map = dt_map - dt_mapr;
+    //Φ(x) = −d(x),∀x ∈ Ωf and Φ(x) = d(x),∀x ∈ Ωb.
+    dt_map = -dt_map + dt_mapr;
 
 
     ceres::Problem problem;
@@ -149,7 +166,7 @@ int main()
     }
 
     ceres::Solver::Options options;
-//    options.minimizer_progress_to_stdout = true;
+    options.minimizer_progress_to_stdout = true;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
