@@ -17,6 +17,7 @@ struct NumericDiffCostFunctor
     const cv::Mat dt_map_;
     const cv::Mat fwd_;
     const cv::Mat bg_;
+
 };
 
 #endif //HISTOGRAMTRACKER_SOLVER_H
