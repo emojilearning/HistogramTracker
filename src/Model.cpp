@@ -43,6 +43,7 @@ void Model::Display(cv::Mat& canvas,Sophus::SE3d pose)
 
         pt = intrinsic_ * pt;
         vxv.emplace_back(pt(0),pt(1));
+        cout<<pt<<endl;
     }
     draw(canvas,vxv);
 }

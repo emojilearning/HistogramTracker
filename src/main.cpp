@@ -18,10 +18,10 @@ int main()
     Mat img = imread("../origin.png");
     imshow("result",img);
 
-    int x_before = 240;
-    int y_before = 200;
-    int l_x_b = 159;
-    int l_y_b = 130;
+    int x_before = 248;
+    int y_before = 212;
+    int l_x_b = 161;
+    int l_y_b = 120;
 
     double initial_pose[2] = {(double)x_before,(double)y_before};
 
@@ -33,6 +33,7 @@ int main()
             0,0,1,2.9,
             0,0,0,1;
     SE3d sse(pv);
+
     Mat out0 = img.clone();
     m.Display(out0,sse);
     imshow("result1",out0);
@@ -54,34 +55,10 @@ int main()
 
     vector<Point> sample_points;// = {{0,0},{l_x_b,0},{0,l_y_b},{l_x_b,l_y_b}};
 
-//    //here is some bp
-//    BresenhamCircle(10,sample_points);
-//    BresenhamCircle(Point{l_x_b,0},10,sample_points);
-//    BresenhamCircle(Point{l_x_b,l_y_b},10,sample_points);
-//    BresenhamCircle(Point{0,l_y_b},10,sample_points);
+    auto rot = sse.so3().log();
+    auto& t = sse.translation();
+    double pose_op[6] = {rot(0),rot(1),rot(2),t(0),t(1),t(2)};
 
-    vector<Point2d> lft,rgt;
-    lft.emplace_back(0,0);
-    lft.emplace_back(l_x_b,0);
-    lft.emplace_back(l_x_b,l_y_b);
-    lft.emplace_back(0,l_y_b);
-    rgt.emplace_back(x_before,y_before);
-    rgt.emplace_back(x_before + l_x_b,y_before);
-    rgt.emplace_back(x_before + l_x_b,y_before + l_y_b);
-    rgt.emplace_back(x_before,y_before + l_y_b);
-    Mat H = findHomography(lft,rgt);
-    H = H/H.at<double>(8);
-
-    auto oppose = sse.log();
-//    double n = 100;
-//    for (int k = 0; k< n; ++k)
-//    {
-//        sample_points.emplace_back(0,l_y_b*k/n);
-//        sample_points.emplace_back(l_x_b,l_y_b*k/n);
-//        sample_points.emplace_back(l_x_b*k/n,0);
-//        sample_points.emplace_back(l_x_b*k/n,l_y_b);
-//    }
-    cout<<sample_points.size()<<endl;
     for(int i=0;i<m.vertex_.size();i++){
         auto cost_function =
                 new ceres::NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL,1,6>(
@@ -92,7 +69,7 @@ int main()
                         )
                 ) ;
 
-        problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(1), oppose.data());
+        problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(1), pose_op);
     }
 
     ceres::Solver::Options options;
@@ -107,9 +84,11 @@ int main()
     imshow("lv_set",lv_set);
 
     Mat result = img.clone();
-    cv::perspectiveTransform(lft,rgt,H);
 //    draw(result,rgt);
-    m.Display(result,SE3d::exp(oppose));
+
+    SE3d Tp(SO3d::exp(Eigen::Vector3d(pose_op[0],pose_op[1],pose_op[2])),
+         Eigen::Vector3d(pose_op[3],pose_op[4],pose_op[5]));
+    m.Display(result,Tp);
     imshow("final",result);
 
 

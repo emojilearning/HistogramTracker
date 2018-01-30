@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <ceres/ceres.h>
 #include <sophus/se3.hpp>
+#include <sophus/so3.hpp>
 #include "Model.h"
 
 using namespace cv;
@@ -14,11 +15,9 @@ using namespace Sophus;
 
 bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) const {
     residual[0] = 0;
-    SE3d pose_t;
-    Vector6d tandr;
-    tandr<<pose[0],pose[1],pose[2],
-            pose[3],pose[4],pose[5];
-    pose_t = SE3d::exp(tandr);
+    Eigen::Vector3d tandr(pose[3],pose[4],pose[5]);
+    Eigen::Vector3d rot(pose[0],pose[1],pose[2]);
+    SE3d pose_t(SO3d::exp(rot),tandr);
 
     Point2d p = Model::GetInstance()->Project2d(X_,pose_t);
 
@@ -41,7 +40,7 @@ bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) co
     double Theta = (dt);
 
     //theta here is wired...
-    auto He = (1.0) / ((1) + ceres::exp(-Theta));
+    auto He = (1.0) / ((1) + ceres::exp(-Theta*10));
 
     double E;
 //
