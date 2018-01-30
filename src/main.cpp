@@ -21,7 +21,7 @@ int main()
     Model m;
     m.SetIntrinsic();
     Matrix4d pv;
-    pv<<    1,0,0,-0.01,
+    pv<<    1,0,0,0,
             0,1,0,0.25,
             0,0,1,3.0,
             0,0,0,1;
@@ -41,27 +41,32 @@ int main()
     imshow("post",foreth);
 
     Mat lv_set;
-    ComputeLvSet(foreth,lv_set);
+    ComputeLvSet(mask ,lv_set);
 
     ceres::Problem problem;
 
     vector<Point> sample_points;// = {{0,0},{l_x_b,0},{0,l_y_b},{l_x_b,l_y_b}};
+
+    BresenhamCircle(10,sample_points);
 
     auto rot = sse.so3().log();
     auto& t = sse.translation();
     double pose_op[6] = {rot(0),rot(1),rot(2),t(0),t(1),t(2)};
 
     for(int i=0;i<m.vertex_.size();i++){
-        auto cost_function =
-                new ceres::NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL,1,6>(
-                        new NumericDiffCostFunctor(m.vertex_[i],\
+        for (int j = 0; j < sample_points.size(); ++j) {
+            auto cost_function =
+                    new ceres::NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL,1,6>(
+                            new NumericDiffCostFunctor(m.vertex_[i],sample_points[j],\
                         fposterior,\
                         bposterior,\
                         lv_set\
                         )
-                ) ;
+                    ) ;
 
-        problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(1), pose_op);
+            problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(1), pose_op);
+        }
+
     }
 
     ceres::Solver::Options options;

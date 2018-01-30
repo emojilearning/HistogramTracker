@@ -21,8 +21,8 @@ bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) co
 
     Point2d p = Model::GetInstance()->Project2d(X_,pose_t);
 
-    double x = p.x;
-    double y = p.y;
+    double x = p.x+offset_.x;
+    double y = p.y+offset_.y;
     int xf = (int)floor(x);
     int yf = (int)floor(y);
     int xc = (int)ceil(x);
@@ -52,7 +52,7 @@ bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) co
               + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
 
 //        E = He;
-    residual[0] = Theta;
+    residual[0] = E;
 
 //    }
 //    std::cout<<residual[0]<<std::endl;
