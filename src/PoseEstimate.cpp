@@ -13,11 +13,15 @@ bool NumericDiffCostFunctor::operator()(const double *vertex, double *residual) 
     residual[0] = 0;
     cv::Matx33d H(vertex);
     H(2,2) = 1;
+    H(0,1) = 0;
+    H(1,0) = 0;
+    H(2,0) = 0;
+    H(2,1) = 0;
 
     auto p = H*Point3d(X_.x,X_.y,1);
 
-    double x = vertex[0] + p.x/p.z;
-    double y = vertex[1] + p.y/p.z;
+    double x = p.x/p.z;
+    double y = p.y/p.z;
     int xf = (int)floor(x);
     int yf = (int)floor(y);
     int xc = (int)ceil(x);

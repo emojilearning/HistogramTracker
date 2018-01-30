@@ -1,31 +1,44 @@
 #include <opencv2/opencv.hpp>
 #include <ceres/ceres.h>
+#include <sophus/se3.hpp>
 
 #include "Viz.h"
 #include "Segment.h"
 #include "PoseEstimate.h"
 #include "Region.h"
+#include "Model.h"
 
 
 using namespace cv;
 using namespace std;
+using namespace Sophus;
 
 int main()
 {
     Mat img = imread("../origin.png");
     imshow("result",img);
 
-    int x_before = 265;
-    int y_before = 135;
-    int l_x_b = 139;
-    int l_y_b = 111;
+    int x_before = 240;
+    int y_before = 200;
+    int l_x_b = 159;
+    int l_y_b = 130;
 
     double initial_pose[2] = {(double)x_before,(double)y_before};
 
+    Model m;
+    m.SetIntrinsic();
+    Matrix4d pv;
+    pv<<    1,0,0,0,
+            0,1,0,0.25,
+            0,0,1,2.9,
+            0,0,0,1;
+    SE3d sse(pv);
+    Mat out0 = img.clone();
+    m.Display(out0,sse);
+    imshow("result1",out0);
 
-    Mat out1 = img.clone();
-    draw(out1,x_before,y_before,l_x_b,l_y_b);
-    imshow("result1",out1);
+
+
 
     Mat mask = Mat::zeros(img.rows,img.cols,CV_8U);
     Rect mm(x_before,y_before,l_x_b,l_y_b);
@@ -45,15 +58,11 @@ int main()
 
     vector<Point> sample_points;// = {{0,0},{l_x_b,0},{0,l_y_b},{l_x_b,l_y_b}};
 
-    vector<Point> temp;
-    BresenhamCircle(10,temp);
-    sample_points.insert(sample_points.end(), temp.begin(),temp.end());
-    BresenhamCircle(Point{l_x_b,0},10,temp);
-    sample_points.insert(sample_points.end(), temp.begin(),temp.end());
-    BresenhamCircle(Point{l_x_b,l_y_b},10,temp);
-    sample_points.insert(sample_points.end(), temp.begin(),temp.end());
-    BresenhamCircle(Point{0,l_y_b},10,temp);
-    sample_points.insert(sample_points.end(), temp.begin(),temp.end());
+    //here is some bp
+    BresenhamCircle(10,sample_points);
+    BresenhamCircle(Point{l_x_b,0},10,sample_points);
+    BresenhamCircle(Point{l_x_b,l_y_b},10,sample_points);
+    BresenhamCircle(Point{0,l_y_b},10,sample_points);
 
     vector<Point2d> lft,rgt;
     lft.emplace_back(0,0);
@@ -68,13 +77,15 @@ int main()
     H = H/H.at<double>(8);
 
 
-//    for (int k = 0; k< 10; ++k)
+//    double n = 100;
+//    for (int k = 0; k< n; ++k)
 //    {
-//        sample_points.emplace_back(0,l_y_b*k/10.0);
-//        sample_points.emplace_back(l_x_b,l_y_b*k/10.0);
-//        sample_points.emplace_back(l_x_b*k/10.0,0);
-//        sample_points.emplace_back(l_x_b*k/10.0,l_y_b);
+//        sample_points.emplace_back(0,l_y_b*k/n);
+//        sample_points.emplace_back(l_x_b,l_y_b*k/n);
+//        sample_points.emplace_back(l_x_b*k/n,0);
+//        sample_points.emplace_back(l_x_b*k/n,l_y_b);
 //    }
+    cout<<sample_points.size()<<endl;
     for(int i=0;i<sample_points.size();i++){
         auto cost_function =
                 new ceres::NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL,1,9>(
@@ -89,7 +100,7 @@ int main()
     }
 
     ceres::Solver::Options options;
-    options.minimizer_progress_to_stdout = true;
+//    options.minimizer_progress_to_stdout = true;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
