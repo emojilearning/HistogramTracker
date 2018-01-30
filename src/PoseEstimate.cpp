@@ -5,23 +5,25 @@
 #include "PoseEstimate.h"
 #include <opencv2/opencv.hpp>
 #include <ceres/ceres.h>
+#include <sophus/se3.hpp>
+#include "Model.h"
 
 using namespace cv;
+using namespace Sophus;
 
 
-bool NumericDiffCostFunctor::operator()(const double *vertex, double *residual) const {
+bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) const {
     residual[0] = 0;
-    cv::Matx33d H(vertex);
-    H(2,2) = 1;
-    H(0,1) = 0;
-    H(1,0) = 0;
-    H(2,0) = 0;
-    H(2,1) = 0;
+    SE3d pose_t;
+    Vector6d tandr;
+    tandr<<pose[0],pose[1],pose[2],
+            pose[3],pose[4],pose[5];
+    pose_t = SE3d::exp(tandr);
 
-    auto p = H*Point3d(X_.x,X_.y,1);
+    Point2d p = Model::GetInstance()->Project2d(X_,pose_t);
 
-    double x = p.x/p.z;
-    double y = p.y/p.z;
+    double x = p.x;
+    double y = p.y;
     int xf = (int)floor(x);
     int yf = (int)floor(y);
     int xc = (int)ceil(x);

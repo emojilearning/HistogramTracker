@@ -9,11 +9,11 @@
 
 struct NumericDiffCostFunctor
 {
-    NumericDiffCostFunctor(cv::Point &X, cv::Mat &fwd, cv::Mat &bg, cv::Mat &dt_map) :
+    NumericDiffCostFunctor(cv::Point3d &X, cv::Mat &fwd, cv::Mat &bg, cv::Mat &dt_map) :
             X_(X), fwd_(fwd), bg_(bg), dt_map_(dt_map) {};
-    bool operator()(const double *vertex, double *residual) const;
+    bool operator()(const double *pose, double *residual) const;
 
-    const cv::Point X_;
+    const cv::Point3d X_;
     const cv::Mat dt_map_;
     const cv::Mat fwd_;
     const cv::Mat bg_;

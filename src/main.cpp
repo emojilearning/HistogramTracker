@@ -37,13 +37,9 @@ int main()
     m.Display(out0,sse);
     imshow("result1",out0);
 
-
-
-
     Mat mask = Mat::zeros(img.rows,img.cols,CV_8U);
     Rect mm(x_before,y_before,l_x_b,l_y_b);
     mask(mm).setTo(255);
-    imshow("mask",mask);
 
 
     cv::Mat fposterior,bposterior;
@@ -58,11 +54,11 @@ int main()
 
     vector<Point> sample_points;// = {{0,0},{l_x_b,0},{0,l_y_b},{l_x_b,l_y_b}};
 
-    //here is some bp
-    BresenhamCircle(10,sample_points);
-    BresenhamCircle(Point{l_x_b,0},10,sample_points);
-    BresenhamCircle(Point{l_x_b,l_y_b},10,sample_points);
-    BresenhamCircle(Point{0,l_y_b},10,sample_points);
+//    //here is some bp
+//    BresenhamCircle(10,sample_points);
+//    BresenhamCircle(Point{l_x_b,0},10,sample_points);
+//    BresenhamCircle(Point{l_x_b,l_y_b},10,sample_points);
+//    BresenhamCircle(Point{0,l_y_b},10,sample_points);
 
     vector<Point2d> lft,rgt;
     lft.emplace_back(0,0);
@@ -76,7 +72,7 @@ int main()
     Mat H = findHomography(lft,rgt);
     H = H/H.at<double>(8);
 
-
+    auto oppose = sse.log();
 //    double n = 100;
 //    for (int k = 0; k< n; ++k)
 //    {
@@ -86,17 +82,17 @@ int main()
 //        sample_points.emplace_back(l_x_b*k/n,l_y_b);
 //    }
     cout<<sample_points.size()<<endl;
-    for(int i=0;i<sample_points.size();i++){
+    for(int i=0;i<m.vertex_.size();i++){
         auto cost_function =
-                new ceres::NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL,1,9>(
-                        new NumericDiffCostFunctor(sample_points[i],\
+                new ceres::NumericDiffCostFunction<NumericDiffCostFunctor, ceres::CENTRAL,1,6>(
+                        new NumericDiffCostFunctor(m.vertex_[i],\
                         fposterior,\
                         bposterior,\
                         lv_set\
                         )
                 ) ;
 
-        problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(1), H.ptr<double>(0));
+        problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(1), oppose.data());
     }
 
     ceres::Solver::Options options;
@@ -112,7 +108,8 @@ int main()
 
     Mat result = img.clone();
     cv::perspectiveTransform(lft,rgt,H);
-    draw(result,rgt);
+//    draw(result,rgt);
+    m.Display(result,SE3d::exp(oppose));
     imshow("final",result);
 
 
