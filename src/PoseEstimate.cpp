@@ -52,7 +52,7 @@ bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) co
               + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
 
 //        E = He;
-    residual[0] = E;
+    residual[0] = Theta;
 
 //    }
 //    std::cout<<residual[0]<<std::endl;
