@@ -18,19 +18,12 @@ int main()
     Mat img = imread("../origin.png");
     imshow("result",img);
 
-    int x_before = 248;
-    int y_before = 212;
-    int l_x_b = 161;
-    int l_y_b = 120;
-
-    double initial_pose[2] = {(double)x_before,(double)y_before};
-
     Model m;
     m.SetIntrinsic();
     Matrix4d pv;
-    pv<<    1,0,0,0,
+    pv<<    1,0,0,-0.01,
             0,1,0,0.25,
-            0,0,1,2.9,
+            0,0,1,3.0,
             0,0,0,1;
     SE3d sse(pv);
 
@@ -38,9 +31,8 @@ int main()
     m.Display(out0,sse);
     imshow("result1",out0);
 
-    Mat mask = Mat::zeros(img.rows,img.cols,CV_8U);
-    Rect mm(x_before,y_before,l_x_b,l_y_b);
-    mask(mm).setTo(255);
+    Mat mask;
+    mask = m.DrawMask(img,sse);
 
 
     cv::Mat fposterior,bposterior;
@@ -49,7 +41,7 @@ int main()
     imshow("post",foreth);
 
     Mat lv_set;
-    ComputeLvSet(mask,lv_set);
+    ComputeLvSet(foreth,lv_set);
 
     ceres::Problem problem;
 
@@ -78,8 +70,6 @@ int main()
     ceres::Solve(options, &problem, &summary);
 
     std::cout << summary.BriefReport() << "\n";
-    std::cout << initial_pose[0] << "\n";
-    std::cout << initial_pose[1] << "\n";
 
     imshow("lv_set",lv_set);
 
@@ -90,8 +80,6 @@ int main()
          Eigen::Vector3d(pose_op[3],pose_op[4],pose_op[5]));
     m.Display(result,Tp);
     imshow("final",result);
-
-
 
     waitKey(0);
     return 0;

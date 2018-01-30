@@ -40,7 +40,7 @@ bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) co
     double Theta = (dt);
 
     //theta here is wired...
-    auto He = (1.0) / ((1) + ceres::exp(-Theta*10));
+    auto He = (1.0) / ((1) + ceres::exp(-Theta));
 
     double E;
 //

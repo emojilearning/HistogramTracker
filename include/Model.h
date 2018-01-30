@@ -17,6 +17,7 @@ public:
     }
     void SetIntrinsic();
     void Display(cv::Mat& canvas,Sophus::SE3d pose);
+    cv::Mat DrawMask(cv::Mat& mask,Sophus::SE3d pose);
     cv::Point2d Project2d(cv::Point3d vertex,Sophus::SE3d pose);
 
     cv::Matx33d intrinsic_;

@@ -48,6 +48,30 @@ void Model::Display(cv::Mat& canvas,Sophus::SE3d pose)
     draw(canvas,vxv);
 }
 
+Mat Model::DrawMask(cv::Mat& img,Sophus::SE3d pose)
+{
+    Matx44d pose_cv;
+    eigen2cv(pose.matrix(),pose_cv);
+    vector<Point2d> vxv;
+    for(auto v:vertex_)
+    {
+        Vec4d p = pose_cv * cv::Vec4d (v.x,v.y,v.z,1);
+        p = p/p(3);
+        Vec3d pt = Vec3d{p(0),p(1),p(2)};
+        pt = pt/pt(2);
+
+        pt = intrinsic_ * pt;
+        vxv.emplace_back(pt(0),pt(1));
+        cout<<pt<<endl;
+    }
+    Mat temp(Mat::zeros(img.size(),CV_8U));
+    draw(temp,vxv,cv::Scalar{255,255,255});
+    vector<vector<Point>> contours;
+    findContours(temp,contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+    drawContours(temp,contours, -1, CV_RGB(255, 255, 255), CV_FILLED);
+    return temp;
+}
+
 Point2d Model::Project2d(Point3d v,Sophus::SE3d pose)
 {
     Matx44d pose_cv;
