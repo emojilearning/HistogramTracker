@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 project(HistogramTracker)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/CmakeModules/)
 add_compile_options(-O3)
 
@@ -10,6 +10,9 @@ find_package(Eigen3 REQUIRED)
 find_package(glog REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(Sophus REQUIRED)
+find_package(GLUT REQUIRED)
+find_package(OpenGL REQUIRED)
+
 
 file(GLOB_RECURSE SOURCE_FILES  ${PROJECT_SOURCE_DIR}/src/*.c* ${PROJECT_SOURCE_DIR}/ThirdParty/*.c*)
 file(GLOB_RECURSE HEADERS  ${PROJECT_SOURCE_DIR}/include/*.h* ${PROJECT_SOURCE_DIR}/ThirdParty/*.h*)
@@ -24,8 +27,12 @@ INCLUDE_DIRECTORIES(
         ${PROJECT_SOURCE_DIR}/ThirdParty
         ${EIGEN3_INCLUDE_DIR}
         ${GLOG_INCLUDE_DIRS}
+        ${GLUT_INCLUDE_DIRS}
+        ${OPENGL_INCLUDE_DIRS}
         ${Sophus_INCLUDE_DIRS}
 )
+
+
 function(assign_source_group)
 foreach(_source IN ITEMS ${ARGN})
     if (IS_ABSOLUTE "${_source}")
@@ -51,5 +58,5 @@ SET_TARGET_PROPERTIES(HistogramTracker PROPERTIES    RUNTIME_OUTPUT_DIRECTORY  "
 
 ADD_DEFINITIONS(/D_USE_MATH_DEFINES )
 
-LIST(APPEND LINK_LIBS ${OpenCV_LIBS} ${GLOG_LIBRARIES} ceres)
+LIST(APPEND LINK_LIBS ${OpenCV_LIBS} ${GLOG_LIBRARIES} ceres ${OPENGL_LIBRARIES} )
 TARGET_LINK_LIBRARIES(HistogramTracker ${LINK_LIBS})

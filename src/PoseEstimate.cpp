@@ -23,6 +23,8 @@ bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) co
 
     double x = p.x+offset_.x;
     double y = p.y+offset_.y;
+
+    //bilinear interpolation
     int xf = (int)floor(x);
     int yf = (int)floor(y);
     int xc = (int)ceil(x);
@@ -47,9 +49,12 @@ bool NumericDiffCostFunctor::operator()(const double *pose, double *residual) co
 //        E = -ceres::log(He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
 //                        + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
 
-////together with robust function we implement the eassy
-    E = -1 + (He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
+////together with robust function we implement the eassy.considering that ceres-solver using min-square the "-" is dropped
+    E = -1 +
+            (He * fwd_.at<double>(cv::Point(cvRound(x),cvRound(y)))
               + (1 - He) * bg_.at<double>(cv::Point(cvRound(x),cvRound(y))));
+
+
 
 //        E = He;
     residual[0] = E;
