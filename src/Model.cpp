@@ -39,12 +39,12 @@ void Model::SetIntrinsic() {
 
 void Model::Display(cv::Mat& canvas,Sophus::SE3d pose)
 {
-    Matx44d pose_cv;
+    Mat pose_cv;
     eigen2cv(pose.matrix(),pose_cv);
     vector<Point2d> vxv;
     for(auto v:vertex_)
     {
-        Vec4d p = pose_cv * cv::Vec4d (v.x,v.y,v.z,1);
+        Vec4d p = Matx44d(pose_cv) * cv::Vec4d (v.x,v.y,v.z,1);
         p = p/p(3);
         Vec3d pt = Vec3d{p(0),p(1),p(2)};
         pt = pt/pt(2);
@@ -73,9 +73,9 @@ void Model::loadObj(const std::string& filename) {
 
     model_ = glmReadOBJ(const_cast<char*>(filename.c_str()));
     CHECK(model_) << "failed to load model";
-    vertex_.clear();
     vertices_hom_ = cv::Mat::zeros(4, model_->numvertices, CV_64F);
-    for (int i = 0; i <= model_->numvertices; ++i) {
+    vertex_.clear();
+    for (int i = 1; i <= model_->numvertices; ++i) {
         vertex_.emplace_back(model_->vertices[3 * (i)+0],
                              model_->vertices[3 * (i)+1],
                              model_->vertices[3 * (i)+2]);

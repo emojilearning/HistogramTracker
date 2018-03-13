@@ -172,15 +172,15 @@ void Model::getVisualableVertices(Sophus::SE3d &pose, cv::Mat& vis_vertices) {
 
     int visualable_line_count = 0;
     for (size_t i = 0; i<model_->numLines; i++) {
-        if ((model_->lines[i].e1 == 1 && model_->lines[i].e2 == 0) || (model_->lines[i].e1 == 0 && model_->lines[i].e2 == 1) || (model_->lines[i].e1 == 1 && model_->lines[i].e2 == 1)) {
+//        if ((model_->lines[i].e1 == 1 && model_->lines[i].e2 == 0) || (model_->lines[i].e1 == 0 && model_->lines[i].e2 == 1) || (model_->lines[i].e1 == 1 && model_->lines[i].e2 == 1)) {
             visualable_line_count++;
-        }
+//        }
     }
 
     cv::Mat pos(4, visualable_line_count*2, CV_64F);
     int vis_line_index = 0;
     for (size_t i = 0; i<model_->numLines; i++) {
-        if ((model_->lines[i].e1 == 1 && model_->lines[i].e2 == 0) || (model_->lines[i].e1 == 0 && model_->lines[i].e2 == 1) || (model_->lines[i].e1 == 1 && model_->lines[i].e2 == 1)) {
+//        if ((model_->lines[i].e1 == 1 && model_->lines[i].e2 == 0) || (model_->lines[i].e1 == 0 && model_->lines[i].e2 == 1) || (model_->lines[i].e1 == 1 && model_->lines[i].e2 == 1)) {
             GLuint v0 = model_->lines[i].vindices[0];
             GLuint v1 = model_->lines[i].vindices[1];
 
@@ -195,7 +195,7 @@ void Model::getVisualableVertices(Sophus::SE3d &pose, cv::Mat& vis_vertices) {
             pos.at<double>(3, 2*vis_line_index+1) = 1;
 
             vis_line_index++;
-        }
+//        }
         model_->lines[i].e1 = 0; model_->lines[i].e2 = 0;
     }
 

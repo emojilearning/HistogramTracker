@@ -16,8 +16,7 @@ void draw(Mat& out1, int x_before,int y_before,int l_x_b,int l_y_b)
 
 void draw(Mat& out1, std::vector<Point2d> p,cv::Scalar s)
 {
-    line(out1,p[0],p[1],s);
-    line(out1,p[1],p[2],s);
-    line(out1,p[2],p[3],s);
-    line(out1,p[3],p[0],s);
+    for (int i = 0; i < p.size() ; ++i) {
+        line(out1,p[i],p[(i+1)%p.size()],s);
+    }
 }

@@ -5,6 +5,7 @@
 #include "Segment.h"
 
 using namespace cv;
+using namespace std;
 
 void ComputePosterior(const cv::Mat& img,const cv::Mat& mask,cv::Mat& fp,cv::Mat& bp)
 {
@@ -12,6 +13,14 @@ void ComputePosterior(const cv::Mat& img,const cv::Mat& mask,cv::Mat& fp,cv::Mat
     Histogram cur_histogram;
     double fnum = 0;
     double gnum = 0;
+//    for (int i = 0; i < 255; ++i) {
+//        cur_histogram.fB[i]++;
+//        cur_histogram.fG[i]++;
+//        cur_histogram.fR[i]++;
+//        cur_histogram.bB[i]++;
+//        cur_histogram.bG[i]++;
+//        cur_histogram.bR[i]++;
+//    }
     for (int i = 0; i < mask.size().area(); ++i) {
         auto BGR = img.at<Vec3b>(i);
         if(mask.at<unsigned char>(i))
@@ -29,7 +38,6 @@ void ComputePosterior(const cv::Mat& img,const cv::Mat& mask,cv::Mat& fp,cv::Mat
             gnum++;
         }
     }
-
     cv::Mat fposterior = Mat::zeros(img.size(),CV_64F);
     cv::Mat bposterior = Mat::zeros(img.size(),CV_64F);
     for (int j = 0; j < img.size().area(); ++j) {
@@ -40,6 +48,7 @@ void ComputePosterior(const cv::Mat& img,const cv::Mat& mask,cv::Mat& fp,cv::Mat
         auto blikelihood = (cur_histogram.bB[p[0]]/gnum
                             * cur_histogram.bG[p[1]]/gnum
                             * cur_histogram.bR[p[2]]/gnum);
+//        cout<<flikelihood<<" "<<blikelihood<<endl;
         fposterior.at<double>(j) = flikelihood * (fnum/(fnum + gnum))*fnum/(fnum + gnum)*fnum/(fnum + gnum);
         bposterior.at<double>(j) = blikelihood * (gnum/(fnum + gnum))*gnum/(fnum + gnum)*gnum/(fnum + gnum);
         if(fposterior.at<double>(j)&&bposterior.at<double>(j))
@@ -47,6 +56,12 @@ void ComputePosterior(const cv::Mat& img,const cv::Mat& mask,cv::Mat& fp,cv::Mat
             auto s = fposterior.at<double>(j)+bposterior.at<double>(j);
             fposterior.at<double>(j) = fposterior.at<double>(j)/s;
             bposterior.at<double>(j) = bposterior.at<double>(j)/s;
+        } else
+        {
+            if(fposterior.at<double>(j))
+                fposterior.at<double>(j)=1;
+            else
+                bposterior.at<double>(j)=1;
         }
 //        std::cout<<fposterior.at<double>(j)<<" "<<bposterior.at<double>(j)<<std::endl;
     }
